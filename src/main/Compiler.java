@@ -11,10 +11,13 @@ import java.io.PrintStream;
 import parser.MiniJavaScanner;
 import parser.ParseException;
 import syntax.*;
+import translate.*;
+import tree.Stm;
+import tree.TreePrint;
 import visitor.DefineChecker;
 import visitor.TypeChecker;
 
-public class Parse {
+public class Compiler {
     static String outFile = "Debug.txt";
     static String errFile = "Error.txt";
     private static boolean verbose;
@@ -44,8 +47,21 @@ public class Parse {
             
             TypeChecker tc=new TypeChecker(dc.table);
             tc.visit(pg);
+            Translater tIR= new Translater(dc.table);
+            tIR.visit(pg);
             
+            for(Stm tt:tIR.fragments){
+                //System.out.print(TreePrint.toString(tt));
 
+                for(Stm ts:canon.Main.transform(tt)){
+
+                    System.out.print(TreePrint.toString(ts));
+                }
+            }
+            
+            
+            
+            
             errorNumber+=Verboser.errCount;
 
             

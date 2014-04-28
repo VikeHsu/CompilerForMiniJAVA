@@ -22,35 +22,21 @@ class IfThenElseExp extends LazyIRTree {
     }
 
     public Exp asExp () {
-        final TEMP result = TEMP.generateTEMP();
-        final Stm seq;
-        if (e3 == null) {
-            seq = new SEQ(cond.asCond(t, f), new SEQ(new LABEL(t.label), // T:
-                    new SEQ(new MOVE(new TEMP(result.temp), e2.asExp()), // result
-                                                                         // :=
-                                                                         // then
-                                                                         // expr
-                            new LABEL(f.label)))); // F:
-        } else {
-            seq = new SEQ(cond.asCond(t, f), new SEQ(new LABEL(t.label),
-                    new SEQ(new MOVE(new TEMP(result.temp), e2.asExp()), // result
-                                                                         // :=
-                                                                         // then
-                                                                         // expr
-                            new SEQ(new JUMP(join.label), // goto join
-                                    new SEQ(new LABEL(f.label), // F:
-                                            new SEQ(new MOVE(new TEMP(
-                                                    result.temp), e3.asExp()), // result
-                                                                               // :=
-                                                                               // else
-                                                                               // expr
-                                                    new LABEL(join.label))))))); // join:
-        }
-        return new ESEQ(seq, new TEMP(result.temp));
+        return null;
     }
 
     public Stm asStm () {
-        return null;
+        final Stm seq;
+        if (e3 == null) {
+            seq = new SEQ(new CJUMP(CJUMP.EQ, CONST.TRUE, cond.asExp(), t.label, f.label), new SEQ(new LABEL(t.label),
+                    new SEQ(e2.asStm(), new LABEL(f.label))));
+        } else {
+            seq = new SEQ(new CJUMP(CJUMP.EQ, CONST.TRUE, cond.asExp(), t.label, f.label), new SEQ(new LABEL(t.label),
+                    new SEQ(e2.asStm(), new SEQ(new JUMP(join.label), new SEQ(
+                            new LABEL(f.label), new SEQ(e3.asStm(), new LABEL(
+                                    join.label)))))));
+        }
+        return seq;
     }
 
     public Stm asCond (LABEL tt, LABEL ff) {

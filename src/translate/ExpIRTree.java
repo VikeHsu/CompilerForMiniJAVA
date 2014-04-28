@@ -12,16 +12,19 @@ public class ExpIRTree extends LazyIRTree{
     }
 
     @Override
+    public
     Exp asExp () {
         return exp;
     }
 
     @Override
+    public
     Stm asStm () {
         return null;
     }
 
     @Override
+    public
     Stm asCond (LABEL t, LABEL f) {
         // TODO Auto-generated method stub
         return null;

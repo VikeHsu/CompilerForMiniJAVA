@@ -9,7 +9,7 @@ import tree.*;
 
 // Lazy view of intermediate representation trees
 abstract public class LazyIRTree {
-   abstract Exp asExp();                      // ESEQ (asStm(), CONST(0))
-   abstract Stm asStm();                      // EVAL (asExp())
-   abstract Stm asCond (LABEL t, LABEL f);    // CJUMP (=, asExp(), CONST(0), t, f)
+   public abstract Exp asExp();                      // ESEQ (asStm(), CONST(0))
+   public abstract Stm asStm();                      // EVAL (asExp())
+   public abstract Stm asCond (LABEL t, LABEL f);    // CJUMP (=, asExp(), CONST(0), t, f)
 }

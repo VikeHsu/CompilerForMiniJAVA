@@ -4,6 +4,7 @@ import global.Verboser;
 
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
 
 import syntax.Type;
 
@@ -13,10 +14,10 @@ public class SymbolTable {
             .toString();
     private static final String BOOLEAN_TYPE = Type.THE_BOOLEAN_TYPE.toString();
 
-    HashMap<String, Class> classes = new HashMap<String, Class>();
+    LinkedHashMap<String, Class> classes = new LinkedHashMap<String, Class>();
     int level = 0; // level: 0:global, 1:class, 2,Method;
-    String currentClass;
-    String currentMethod;
+    public String currentClass;
+    public String currentMethod;
 
     public void addClass (String className, String extendedClassname) {
         classes.put(className, new Class(className, extendedClassname));
@@ -27,13 +28,17 @@ public class SymbolTable {
     public void addVar (String varName, String varType) {
         switch (level) {
         case 1:
-            classes.get(currentClass).vars.put(varName, varType);
+            classes.get(currentClass).field.put(varName, varType);
             break;
         case 2:
-            classes.get(currentClass).methods.get(currentMethod).vars.put(
+            classes.get(currentClass).methods.get(currentMethod).local.put(
                     varName, varType);
             break;
         }
+    }
+
+    public void IdLookup () {
+
     }
 
     public void addMethod (String methodName, String returnType) {
@@ -68,15 +73,15 @@ public class SymbolTable {
             Method m = c.methods.get(currentMethod);
             if (m.formalIds.contains(idName))
                 return m.formalTypes.get(m.formalIds.indexOf(idName));
-            else if (m.vars.containsKey(idName))
-                return m.vars.get(idName);
+            else if (m.local.containsKey(idName))
+                return m.local.get(idName);
         }
         return findField(c, idName);
     }
 
     private String findField (Class c, String idName) {
-        if (c.vars.containsKey(idName)) {
-            return c.vars.get(idName);
+        if (c.field.containsKey(idName)) {
+            return c.field.get(idName);
         } else if (!c.extendedClassName.isEmpty()) {
             Class ec = classes.get(c.extendedClassName);
             return findField(ec, idName);
@@ -95,8 +100,8 @@ public class SymbolTable {
                 String out = "formal parameter '" + idName + "' in method '"
                         + c.Name + "." + m.Name + "'.  Type=" + type;
                 return out;
-            } else if (m.vars.containsKey(idName)) {
-                String type = m.vars.get(idName);
+            } else if (m.local.containsKey(idName)) {
+                String type = m.local.get(idName);
                 String out = "local variable '" + idName + "' in method '"
                         + c.Name + "." + m.Name + "'.  Type=" + type;
                 return out;
@@ -106,8 +111,8 @@ public class SymbolTable {
     }
 
     private String findFieldInfo (Class c, String idName) {
-        if (c.vars.containsKey(idName)) {
-            String type = c.vars.get(idName);
+        if (c.field.containsKey(idName)) {
+            String type = c.field.get(idName);
             String out = "field variable '" + idName + "' in class '" + c.Name
                     + "'.  Type=" + type;
             return out;
@@ -190,9 +195,9 @@ public class SymbolTable {
 
     public void checkDefinedType () {
         for (Class c : classes.values()) {
-            if (!c.vars.isEmpty())
-                for (String s : c.vars.keySet()) {
-                    String v = c.vars.get(s);
+            if (!c.field.isEmpty())
+                for (String s : c.field.keySet()) {
+                    String v = c.field.get(s);
                     if (!findType(v)) {
                         Verboser.Err();
                         System.err.println("error on define " + s
@@ -211,9 +216,9 @@ public class SymbolTable {
                                         + " using type " + v);
                             }
                         }
-                    if (!m.vars.isEmpty())
-                        for (String s : m.vars.keySet()) {
-                            String v = m.vars.get(s);
+                    if (!m.local.isEmpty())
+                        for (String s : m.local.keySet()) {
+                            String v = m.local.get(s);
                             if (!findType(v)) {
                                 Verboser.Err();
                                 System.err.println("error on define " + s
@@ -225,13 +230,80 @@ public class SymbolTable {
                 Verboser.DefLoop(c.Name, c.extendedClassName);
         }
     }
+
+    public int getTotalFieldNumber (String className) {
+        int i = 0;
+        i += classes.get(className).field.size();
+        if (!classes.get(className).extendedClassName.equals("")) {
+            i += getTotalFieldNumber(classes.get(className).extendedClassName);
+        }
+        return i;
+    }
+
+    public int getFieldIndex (String className, String fieldName) {
+        int index = 0;
+        Class c = classes.get(className);
+        for (String str : c.field.keySet()) {
+            if (str.equals(fieldName)) {
+                return index;
+            }
+            index++;
+        }
+        if (!classes.get(className).extendedClassName.equals("")) {
+            index += getFieldIndex(classes.get(className).extendedClassName,
+                    fieldName);
+        }
+        return index;
+    }
+
+    public int getLocalIndex (String className, String methodName,
+            String fieldName) {
+        int index = 0;
+        Class c = classes.get(className);
+        Method m = c.methods.get(methodName);
+        for (String str : m.local.keySet()) {
+            if (str.equals(fieldName)) {
+                return index;
+            }
+            index++;
+        }
+        return index;
+    }
+
+    public int getArgIndex (String className, String methodName, String ArgName) {
+        Method m = classes.get(className).methods.get(methodName);
+        return m.formalIds.indexOf(ArgName);
+    }
+
+    public int getVarLocation (String className, String methodName,
+            String varName) {
+        Method m = classes.get(className).methods.get(methodName);
+        if (m.formalIds.contains(varName)) {
+            return 1;//formal
+        } else if (m.local.containsKey(varName)) {
+            return 0;//local
+        }
+        return 2;//field
+    }
+    
+    public LinkedHashMap<String,String>  getfuncName(){
+        LinkedHashMap<String,String> funcName=new  LinkedHashMap<String,String> ();
+        int id=0;
+        for(Class c:classes.values()){
+            for(Method m:c.methods.values()){
+                String nameKey=c.Name+"$"+m.Name;
+                funcName.put(nameKey, nameKey+"$"+id);
+                id++;
+            }
+        }
+        return funcName;
+    }
 }
 
 class Class {
     String Name;
     String extendedClassName;
-    HashMap<String, String> vars = new HashMap<String, String>();// < var name ,
-                                                                 // var type>
+    LinkedHashMap<String, String> field = new LinkedHashMap<String, String>();
     HashMap<String, Method> methods = new HashMap<String, Method>();
 
     Class(String cName, String eName) {
@@ -246,8 +318,12 @@ class Method {
     ArrayList<String> formalIds = new ArrayList<String>();
     ArrayList<String> formalTypes = new ArrayList<String>();
 
-    HashMap<String, String> vars = new HashMap<String, String>();// < var name ,
-                                                                 // var type>
+    LinkedHashMap<String, String> local = new LinkedHashMap<String, String>();// <
+                                                                              // var
+                                                                              // name
+                                                                              // ,
+
+    // var type>
 
     Method(String cName, String rType) {
         this.Name = cName;

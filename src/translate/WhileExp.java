@@ -21,19 +21,15 @@ class WhileExp extends LazyIRTree {
     }
 
     public Exp asExp () {
-        final TEMP result = TEMP.generateTEMP();
-        final Stm seq;
-        seq = new SEQ(new LABEL(w.label),new SEQ(cond.asCond(d, join), new SEQ(new LABEL(d.label), // T:
-                new SEQ(new MOVE(new TEMP(result.temp), e2.asExp()), // result
-                                                                     // :=
-                                                                     // then
-                                                                     // expr
-                        new LABEL(join.label))))); // F:
-        return new ESEQ(seq, new TEMP(result.temp));
+        return null;
     }
 
     public Stm asStm () {
-        return null;
+        final Stm seq;
+        seq = new SEQ(new LABEL(w.label),new SEQ(new CJUMP(CJUMP.EQ, CONST.TRUE, cond.asExp(), d.label, join.label), new SEQ(new LABEL(d.label),
+                new SEQ( e2.asStm(),new SEQ( new JUMP(w.label), 
+                        new LABEL(join.label))))));
+        return seq;
     }
 
     public Stm asCond (LABEL tt, LABEL ff) {

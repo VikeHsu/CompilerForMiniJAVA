@@ -16,6 +16,7 @@ public class LessIRTree extends LazyIRTree {
     }
 
     @Override
+    public
     Exp asExp () {
         final TEMP result = TEMP.generateTEMP();
         final Stm seq;
@@ -36,15 +37,16 @@ public class LessIRTree extends LazyIRTree {
     }
 
     @Override
+    public
     Stm asStm () {
 
         return null;
     }
 
     @Override
+    public
     Stm asCond (LABEL t, LABEL f) {
-        // TODO Auto-generated method stub
-        return new CJUMP(CJUMP.LT, left, right, t.label, f.label);
+        return null;
     }
 
 }
